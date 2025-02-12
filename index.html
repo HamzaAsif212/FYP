@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroScan</title>
+    <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: url('background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;    
+            margin: auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 4em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            border: 3px solid #4CAF50;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.8);
+            margin-bottom: 20px;
+        }
+
+        .box {
+            background: rgba(255, 255, 255, 0.8);
+            border: 3px solid #4CAF50;
+            border-radius: 10px;
+            display: inline-block;
+            padding: 10px;
+            margin-top: 20px;
+        }
+
+        .box h3 {
+            margin: 0;
+            font-size: 1.5em;
+            color: green;
+        }
+
+        .box p {
+            margin: 5px 0 0;
+            font-size: 1.2em;
+        }
+
+        .parameters {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .parameter {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            width: 200px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .parameter h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+
+        .plots {
+            margin-top: 30px;
+        }
+
+        .group-box {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 3px solid green;
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .group-box h3 {
+            font-size: 1.5em;
+            margin: 0;
+            color: green;
+        }
+
+        .group-box p {
+            margin: 5px 0;
+            font-size: 1.2em;
+            color: green;
+        }
+
+        .export-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .export-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AgroScan</h1>
+
+        <div class="group-box">
+            <h3>Group Member</h3>
+            <p>Daniyal Aijaz</p>
+        </div>
+
+        <div class="parameters">
+            <div class="parameter" id="temperature">
+                <h3>Temperature</h3>
+                <p id="temp-value">-- &#8451;</p>
+            </div>
+
+            <div class="parameter" id="humidity">
+                <h3>Humidity</h3>
+                <p id="humidity-value">-- %</p>
+            </div>
+
+            <div class="parameter" id="soil-moisture">
+                <h3>Soil Moisture</h3>
+                <p id="moisture-value">-- %</p>
+            </div>
+
+            <div class="parameter" id="rain-status">
+                <h3>Rain Status</h3>
+                <p id="rain-value">No Raining</p>
+            </div>
+        </div>
+
+        <div class="plots">
+            <div id="temperature-plot"></div>
+            <div id="humidity-plot"></div>
+            <div id="moisture-plot"></div>
+        </div>
+
+        <button class="export-btn" onclick="exportToExcel()">Export to Excel</button>
+    </div>
+
+    <script>
+        // Random data generation
+        function getRandomValue(min, max) {
+            return (Math.random() * (max - min) + min).toFixed(2);
+        }
+
+        // Data storage
+        const dataLog = [];
+
+        // Initialize plot data
+        const temperatureData = {
+            x: [],
+            y: [],
+            mode: 'lines',
+            name: 'Temperature (°C)'
+        };
+        const humidityData = {
+            x: [],
+            y: [],
+            mode: 'lines',
+            name: 'Humidity (%)'
+        };
+        const moistureData = {
+            x: [],
+            y: [],
+            mode: 'lines',
+            name: 'Soil Moisture (%)'
+        };
+
+        // Layout for all plots
+        const layout = {
+            title: '',
+            xaxis: { title: 'Time (s)' },
+            yaxis: { title: '' },
+            margin: { t: 30 }
+        };
+
+        // Render initial plots
+        Plotly.newPlot('temperature-plot', [temperatureData], { ...layout, title: 'Temperature', yaxis: { title: 'Temperature (°C)' } });
+        Plotly.newPlot('humidity-plot', [humidityData], { ...layout, title: 'Humidity', yaxis: { title: 'Humidity (%)' } });
+        Plotly.newPlot('moisture-plot', [moistureData], { ...layout, title: 'Soil Moisture', yaxis: { title: 'Soil Moisture (%)' } });
+
+        let time = 0;
+
+        setInterval(() => {
+            // Generate new values
+            const temperature = getRandomValue(20, 35);
+            const humidity = getRandomValue(30, 70);
+            const soilMoisture = getRandomValue(10, 50);
+            const timestamp = new Date().toLocaleString();
+
+            // Update UI
+            document.getElementById('temp-value').textContent = `${temperature} °C`;
+            document.getElementById('humidity-value').textContent = `${humidity} %`;
+            document.getElementById('moisture-value').textContent = `${soilMoisture} %`;
+
+            // Update time
+            time += 1;
+
+            // Append new data to plots
+            Plotly.extendTraces('temperature-plot', { x: [[time]], y: [[temperature]] }, [0]);
+            Plotly.extendTraces('humidity-plot', { x: [[time]], y: [[humidity]] }, [0]);
+            Plotly.extendTraces('moisture-plot', { x: [[time]], y: [[soilMoisture]] }, [0]);
+
+            // Log data
+            dataLog.push({
+                Time_and_Date: timestamp,
+                Temperature: temperature,
+                Humidity: humidity,
+                SoilMoisture: soilMoisture
+            });
+        }, 1000);
+
+        function exportToExcel() {
+            const worksheet = XLSX.utils.json_to_sheet(dataLog);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "AgroScan Data");
+            XLSX.writeFile(workbook, 'AgroScan_Data.xlsx');
+        }
+    </script>
+</body>
+</html>
